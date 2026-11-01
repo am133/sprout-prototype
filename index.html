@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprout Prototype</title>
+<style>
+  :root {
+    --green: #1f8a4c;
+    --green-dark: #166b3a;
+    --green-soft: #e6f4ec;
+    --ink: #17221b;
+    --muted: #5d6b62;
+    --line: #dde5df;
+    --bg: #f4f7f5;
+    --card: #ffffff;
+    --amber: #a65f00;
+    --amber-soft: #fff3df;
+    --blue: #1d5fa8;
+    --blue-soft: #e7f0fb;
+    --red: #b3261e;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: #dfe7e2;
+    display: flex; align-items: center; justify-content: center; gap: 36px;
+    min-height: 100vh; padding: 20px;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input, textarea { font: inherit; }
+
+  /* ---------- test side panel (desktop only) ---------- */
+  .panel {
+    width: 320px; background: #fff; border-radius: 16px; padding: 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08); font-size: 14px; line-height: 1.45;
+  }
+  .panel h1 { font-size: 18px; margin: 0 0 4px; }
+  .panel .sub { color: var(--muted); margin: 0 0 14px; }
+  .panel ol { padding-left: 18px; margin: 0 0 14px; }
+  .panel li { margin-bottom: 10px; }
+  .panel .reset { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+  @media (max-width: 900px) { .panel { display: none; } body { padding: 0; background: var(--bg); } }
+
+  /* ---------- phone frame ---------- */
+  .phone {
+    width: 390px; height: 800px; max-height: calc(100vh - 40px);
+    background: var(--bg); border-radius: 36px; overflow: hidden; position: relative;
+    box-shadow: 0 0 0 10px #1b231e, 0 20px 50px rgba(0,0,0,.25);
+    display: flex; flex-direction: column;
+  }
+  @media (max-width: 900px) {
+    .phone { width: 100%; height: 100vh; max-height: none; border-radius: 0; box-shadow: none; }
+  }
+  .status { height: 34px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 26px; font-size: 13px; font-weight: 600; background: #fff; }
+  .screen { flex: 1; overflow-y: auto; position: relative; }
+  .screen::-webkit-scrollbar { width: 0; }
+
+  .topbar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; min-height: 54px; }
+  .topbar h2 { font-size: 19px; margin: 0; flex: 1; }
+  .logo { font-weight: 800; font-size: 22px; color: var(--green); flex: 1; display: flex; align-items: center; gap: 6px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--green-soft); color: var(--green-dark); display: grid; place-items: center; font-weight: 700; font-size: 13px; border: 0; }
+  .back { border: 0; background: none; font-size: 22px; padding: 4px 8px 4px 0; line-height: 1; }
+
+  .content { padding: 14px 16px 24px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12.5px; }
+
+  /* tabs */
+  .tabbar { flex: none; display: flex; background: #fff; border-top: 1px solid var(--line); padding: 6px 4px 14px; }
+  .tabbar button { flex: 1; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11.5px; color: var(--muted); padding: 4px 0; }
+  .tabbar button svg { width: 24px; height: 24px; }
+  .tabbar button.on { color: var(--green); font-weight: 600; }
+  .tabbar .dot { position: absolute; }
+
+  /* search + filters */
+  .search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .search input { border: 0; outline: 0; flex: 1; background: none; font-size: 15px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 4px; }
+  .chips::-webkit-scrollbar { height: 0; }
+  .chip { flex: none; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 13.5px; display: flex; align-items: center; gap: 4px; }
+  .chip.on { background: var(--green); border-color: var(--green); color: #fff; }
+  .chip.clear { border: 0; background: none; color: var(--green-dark); text-decoration: underline; }
+  .section-label { font-size: 13px; color: var(--muted); margin: 12px 0 8px; display: flex; justify-content: space-between; }
+
+  /* job cards */
+  .job { background: var(--card); border-radius: var(--radius); border: 1px solid var(--line); padding: 14px; margin-bottom: 12px; text-align: left; width: 100%; display: block; }
+  .job:hover { border-color: #b9cfc1; }
+  .job .row1 { display: flex; justify-content: space-between; align-items: baseline; }
+  .pay { font-size: 21px; font-weight: 800; }
+  .pay small { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .hours { font-size: 13.5px; font-weight: 600; color: var(--ink); background: var(--bg); border-radius: 8px; padding: 3px 8px; }
+  .job h3 { margin: 6px 0 2px; font-size: 16px; }
+  .job .biz { font-size: 13.5px; color: var(--muted); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .badge { font-size: 12px; border-radius: 6px; padding: 3px 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  .b-green { background: var(--green-soft); color: var(--green-dark); }
+  .b-blue { background: var(--blue-soft); color: var(--blue); }
+  .b-amber { background: var(--amber-soft); color: var(--amber); }
+  .b-grey { background: #eef1ef; color: #4a564e; }
+  .job .foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12.5px; color: var(--muted); }
+  .job .foot .view { color: var(--green-dark); font-weight: 700; font-size: 14px; }
+  .applied-tag { color: var(--green-dark); font-weight: 700; }
+  .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
+
+  /* detail */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .stat .v { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .box { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  .box h4 { margin: 0 0 8px; font-size: 15px; }
+  .box ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.5; }
+  .match { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-bottom: 8px; line-height: 1.4; }
+  .match .ic { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--green-soft); color: var(--green-dark); display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .escrow { background: var(--blue-soft); border-color: #c8dbf2; }
+  .escrow h4 { color: var(--blue); }
+  .steps { margin: 10px 0 0; padding: 0; list-style: none; font-size: 13.5px; }
+  .steps li { display: flex; gap: 8px; margin-bottom: 6px; }
+  .steps .n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: var(--blue); font-weight: 700; font-size: 12px; display: grid; place-items: center; border: 1px solid #c8dbf2; }
+  .linkbtn { border: 0; background: none; color: var(--green-dark); font-weight: 600; padding: 0; text-decoration: underline; font-size: 14px; }
+  .sticky-cta { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--bg) 30%); padding: 18px 16px 14px; }
+  .btn { width: 100%; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; background: var(--green); color: #fff; }
+  .btn:hover { background: var(--green-dark); }
+  .btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .btn:disabled { background: #a9c9b6; cursor: default; }
+
+  /* sheet */
+  .scrim { position: absolute; inset: 0; background: rgba(10,20,14,.4); z-index: 20; display: flex; align-items: flex-end; }
+  .sheet { background: #fff; width: 100%; border-radius: 20px 20px 0 0; padding: 18px 16px 20px; max-height: 88%; overflow-y: auto; }
+  .sheet h3 { margin: 0 0 4px; font-size: 18px; }
+  .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: -6px auto 12px; }
+  .opt { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 13px 14px; margin-top: 8px; font-size: 15px; text-align: left; }
+  .opt.on { border-color: var(--green); background: var(--green-soft); font-weight: 600; }
+  .check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--green); }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 80px; resize: vertical; }
+  .shared { background: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin: 12px 0; }
+
+  /* success */
+  .success { text-align: center; padding: 50px 24px; }
+  .bigcheck { width: 76px; height: 76px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; font-size: 40px; margin: 0 auto 16px; }
+
+  /* availability */
+  .seg { display: flex; background: #e7ece9; border-radius: 12px; padding: 4px; margin-bottom: 12px; }
+  .seg button { flex: 1; border: 0; background: none; padding: 9px 6px; border-radius: 9px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .grid { display: grid; grid-template-columns: 74px repeat(7, 1fr); gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 8px; }
+  .grid .h { font-size: 12px; text-align: center; color: var(--muted); font-weight: 600; padding: 2px 0 4px; border: 0; background: none; border-radius: 6px; line-height: 1.2; }
+  .grid button.h:hover { background: var(--bg); color: var(--ink); }
+  .grid .h b { display: block; color: var(--ink); font-size: 13px; }
+  .grid .rl { font-size: 12px; color: var(--muted); display: flex; align-items: center; }
+  .cell { height: 44px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+  .cell.on { background: var(--green); border-color: var(--green); }
+  .cell.changed { outline: 2px dashed var(--amber); outline-offset: 1px; }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); margin: 10px 2px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .note { font-size: 13px; background: var(--amber-soft); color: #6d4200; border-radius: 10px; padding: 9px 11px; margin-bottom: 12px; }
+  .info { font-size: 13px; background: var(--green-soft); color: var(--green-dark); border-radius: 10px; padding: 9px 11px; margin-bottom: 12px; }
+  .savebar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 12px 16px; display: flex; gap: 10px; }
+  .savebar .btn { padding: 12px; font-size: 15px; }
+
+  /* my jobs */
+  .listitem { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; }
+  .listitem .thumb { width: 44px; height: 44px; border-radius: 10px; background: var(--green-soft); color: var(--green-dark); display: grid; place-items: center; font-weight: 800; flex: none; }
+  .listitem .body { flex: 1; min-width: 0; }
+  .listitem .t { font-weight: 700; font-size: 15px; }
+  .listitem .s { font-size: 13px; color: var(--muted); }
+  .listitem .chev { color: var(--muted); font-size: 20px; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { display: flex; gap: 12px; position: relative; padding-bottom: 18px; }
+  .timeline li:not(:last-child)::before { content: ""; position: absolute; left: 11px; top: 24px; bottom: 0; width: 2px; background: var(--line); }
+  .timeline li.done:not(:last-child)::before { background: var(--green); }
+  .timeline .dotc { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; z-index: 1; }
+  .timeline .done .dotc { background: var(--green); border-color: var(--green); }
+  .timeline .now .dotc { border-color: var(--amber); background: var(--amber-soft); }
+  .timeline .tt { font-weight: 700; font-size: 14.5px; }
+  .timeline .ts { font-size: 13px; color: var(--muted); }
+
+  /* certificate */
+  .cert { background: #fff; border-radius: 16px; border: 2px solid var(--green); padding: 20px 18px; text-align: center; }
+  .cert .seal { font-size: 12px; letter-spacing: .12em; color: var(--green-dark); font-weight: 700; }
+  .cert h3 { margin: 6px 0 2px; font-size: 20px; }
+  .cert dl { text-align: left; font-size: 13.5px; margin: 16px 0 0; display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; }
+  .cert dt { color: var(--muted); }
+  .cert dd { margin: 0; }
+
+  /* profile */
+  .prof { text-align: center; padding: 10px 0 6px; }
+  .prof .avatar { width: 72px; height: 72px; font-size: 26px; margin: 0 auto 10px; }
+  .kv { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .kv:last-child { border: 0; }
+
+  .toast { position: absolute; left: 16px; right: 16px; bottom: 84px; background: #1b231e; color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 14px; z-index: 30; box-shadow: 0 8px 20px rgba(0,0,0,.2); animation: pop .2s ease; }
+  @keyframes pop { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .badge-count { background: var(--green); color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 6px; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<aside class="panel" aria-label="Usability test tasks">
+  <h1>Sprout: usability test</h1>
+  <p class="sub">High-fidelity prototype. All data is made up. Nothing you do here is saved or sent anywhere.</p>
+  <p><b>You are Alex</b>, a 3rd-year Software Engineering Technology student looking for flexible work.</p>
+  <ol>
+    <li><b>Task 1.</b> Find a <b>one-time</b> job that pays <b>at least $100</b> and uses your <b>web development</b> skills, and apply for it.</li>
+    <li><b>Task 2.</b> You have a midterm <b>next Wednesday</b>. Make yourself unavailable for <b>all of next Wednesday</b>, without changing your regular weekly schedule, and save.</li>
+    <li><b>Task 3.</b> You finished the logo job for Bloom Florist. Find out the <b>latest date</b> your payment will be released to you.</li>
+  </ol>
+  <button class="reset" onclick="resetAll()">↺ Reset prototype</button>
+</aside>
+
+<div class="phone" id="phone">
+  <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="screen" id="screen"></div>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<script>
+const ICONS = {
+  jobs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',
+  avail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>',
+  myjobs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>',
+  profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5d6b62" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  shield: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>'
+};
+
+const JOBS = [
+  { id: 'cafe', title: 'Build a booking page for a café', biz: 'Maple Leaf Café', km: 2.1, pay: 150, per: '', hrs: 8, hrsLabel: '~8 hrs total', type: 'One-time', skill: 'web',
+    program: true, exp: 'Menu website refresh (Aug 2026)', fit: 'Fits your Tue/Thu evenings',
+    tags: 'website booking html css javascript web development',
+    todo: ['Add an online table-booking page to the café’s existing website', 'Connect it to the café’s Google Calendar', 'Show staff how to update opening hours'],
+    req: ['Basic HTML, CSS and JavaScript', 'Can meet on-site once (about 1 hour)'],
+    when: 'Flexible, finish within 2 weeks' },
+  { id: 'inventory', title: 'Set up an inventory spreadsheet', biz: 'Corner Bike Shop', km: 3.4, pay: 80, per: '', hrs: 4, hrsLabel: '~4 hrs total', type: 'One-time', skill: 'data',
+    program: true, exp: 'Inventory spreadsheet setup (Sep 2026)', fit: 'Fits your Sat morning',
+    tags: 'excel spreadsheet inventory data',
+    todo: ['Build an Excel sheet to track parts and stock levels', 'Add low-stock warnings'], req: ['Excel or Google Sheets'], when: 'Any Saturday this month' },
+  { id: 'maint', title: 'Ongoing website maintenance', biz: 'Westdale Books', km: 6.5, pay: 110, per: '/week', hrs: 3, hrsLabel: '~3 hrs/week', type: 'Ongoing', skill: 'web',
+    program: true, exp: 'Menu website refresh (Aug 2026)', fit: 'Fits your Mon afternoons',
+    tags: 'website wordpress web development maintenance',
+    todo: ['Post new arrivals to the store website every week', 'Fix small layout bugs as they come up'], req: ['WordPress or HTML/CSS', 'Commit for at least 3 months'], when: 'Weekly, any time Mon–Wed' },
+  { id: 'photo', title: 'Product photo shoot for online store', biz: 'Locke St. Ceramics', km: 5.2, pay: 120, per: '', hrs: 5, hrsLabel: '~5 hrs total', type: 'One-time', skill: 'photo',
+    program: false, exp: 'Product photo shoot (Jul 2026)', fit: 'Fits your Sat afternoon',
+    tags: 'photography photos camera editing',
+    todo: ['Photograph about 40 pieces on a white background', 'Light editing and cropping'], req: ['Own camera or good phone camera', 'Photo editing basics'], when: 'One Saturday' },
+  { id: 'wp', title: 'Fix a WordPress contact form', biz: 'Hamilton Yoga Studio', km: 4.8, pay: 70, per: '', hrs: 3, hrsLabel: '~3 hrs total', type: 'One-time', skill: 'web',
+    program: true, exp: 'Menu website refresh (Aug 2026)', fit: 'Fits your Tue evening',
+    tags: 'wordpress website form web development php',
+    todo: ['Find out why contact form emails are not arriving', 'Fix it and test it'], req: ['WordPress basics'], when: 'This week, remote OK' },
+  { id: 'social', title: 'Weekly social media updates', biz: 'Bloom Florist', km: 1.2, pay: 60, per: '/week', hrs: 2, hrsLabel: '~2 hrs/week', type: 'Ongoing', skill: 'media',
+    program: false, exp: null, fit: 'Fits your Mon afternoons',
+    tags: 'instagram social media content marketing',
+    todo: ['Post 3 times a week on Instagram', 'Take photos of new arrangements'], req: ['Comfortable with Instagram'], when: 'Weekly' },
+  { id: 'qa', title: 'Test a mobile app before launch', biz: 'Steeltown Apps', km: 0, remote: true, pay: 90, per: '', hrs: 5, hrsLabel: '~5 hrs total', type: 'One-time', skill: 'qa',
+    program: true, exp: null, fit: 'Do it any time',
+    tags: 'testing qa mobile app android ios',
+    todo: ['Follow a test script on your own phone', 'Report bugs with screenshots'], req: ['Android or iPhone'], when: 'Before Nov 15, fully remote' }
+];
+
+const DAYS = [['Mon',9],['Tue',10],['Wed',11],['Thu',12],['Fri',13],['Sat',14],['Sun',15]];
+const SLOTS = ['Morning','Afternoon','Evening'];
+const REGULAR = [ // [slot][day]
+  [0,0,0,0,0,1,0],
+  [1,0,1,0,0,1,1],
+  [0,1,1,1,0,0,0]
+];
+
+let S;
+function freshState() {
+  return {
+    tab: 'jobs', view: 'feed', jobId: null, sheet: null, toast: null,
+    q: '', f: { type: 'any', pay: 'any', hours: 'any', dist: 'any' },
+    applied: [], showHow: false,
+    availMode: 'regular', regular: clone(REGULAR), next: null, draft: null,
+    myTab: 'active', certId: null
+  };
+}
+function clone(g) { return g.map(r => r.slice()); }
+S = freshState();
+
+function resetAll() { S = freshState(); render(); document.getElementById('screen').scrollTop = 0; }
+
+/* ---------- helpers ---------- */
+function money(j) { return `$${j.pay}<small>${j.per}</small>`; }
+function distLabel(j) { return j.remote ? 'Remote' : `${j.km} km`; }
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  return JOBS.filter(j => {
+    if (q && !(j.title + ' ' + j.biz + ' ' + j.tags).toLowerCase().includes(q)) return false;
+    if (S.f.type !== 'any' && j.type !== S.f.type) return false;
+    if (S.f.pay !== 'any' && j.pay < +S.f.pay) return false;
+    if (S.f.hours !== 'any' && j.hrs > +S.f.hours) return false;
+    if (S.f.dist === 'remote' && !j.remote) return false;
+    if (S.f.dist !== 'any' && S.f.dist !== 'remote' && !j.remote && j.km > +S.f.dist) return false;
+    return true;
+  });
+}
+const FILTERS = {
+  type:  { label: 'Job type', title: 'Job type', opts: [['any','Any type'],['One-time','One-time'],['Ongoing','Ongoing']] },
+  pay:   { label: 'Pay', title: 'Minimum pay', opts: [['any','Any pay'],['50','$50 or more'],['100','$100 or more'],['150','$150 or more']] },
+  hours: { label: 'Hours', title: 'Time commitment', opts: [['any','Any'],['3','Up to 3 hrs'],['5','Up to 5 hrs'],['10','Up to 10 hrs']] },
+  dist:  { label: 'Distance', title: 'Distance', opts: [['any','Any distance'],['2','Within 2 km'],['5','Within 5 km'],['10','Within 10 km'],['remote','Remote only']] }
+};
+function chipText(k) {
+  const v = S.f[k];
+  if (v === 'any') return FILTERS[k].label + ' ▾';
+  return FILTERS[k].opts.find(o => o[0] === v)[1] + ' ▾';
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toast(msg) { S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = null; render(); }, 3200); }
+function go(patch) { Object.assign(S, patch); render(); document.getElementById('screen').scrollTop = 0; }
+
+/* ---------- screens ---------- */
+function feed() {
+  const list = filtered();
+  const anyF = Object.values(S.f).some(v => v !== 'any') || S.q;
+  return `
+  <div class="topbar"><div class="logo">🌱 Sprout</div><button class="avatar" onclick="go({tab:'profile',view:'profile'})" aria-label="Profile">AS</button></div>
+  <div class="content">
+    <label class="search">${ICONS.search}<input id="q" type="search" placeholder="Search jobs, skills, businesses" value="${esc(S.q)}" oninput="S.q=this.value; renderList()"></label>
+    <div class="chips">
+      ${Object.keys(FILTERS).map(k => `<button class="chip ${S.f[k] !== 'any' ? 'on' : ''}" onclick="S.sheet='filter:${k}'; render()">${chipText(k)}</button>`).join('')}
+      ${anyF ? `<button class="chip clear" onclick="S.f={type:'any',pay:'any',hours:'any',dist:'any'}; S.q=''; render()">Clear all</button>` : ''}
+    </div>
+    <div id="list">${listHTML(list)}</div>
+  </div>`;
+}
+function listHTML(list) {
+  return `<div class="section-label"><span>Matched to <b>Software Eng. Tech</b></span><span>${list.length} job${list.length === 1 ? '' : 's'}</span></div>` +
+    (list.length ? list.map(card).join('') : `<div class="empty">No jobs match these filters.<br><button class="linkbtn" onclick="S.f={type:'any',pay:'any',hours:'any',dist:'any'}; S.q=''; render()">Clear filters</button></div>`);
+}
+function renderList() { document.getElementById('list').innerHTML = listHTML(filtered()); }
+function card(j) {
+  const applied = S.applied.includes(j.id);
+  return `<button class="job" onclick="go({view:'detail', jobId:'${j.id}', showHow:false})">
+    <div class="row1"><span class="pay">${money(j)}</span><span class="hours">${j.hrsLabel}</span></div>
+    <h3>${j.title}</h3>
+    <div class="biz">${j.biz} · ${distLabel(j)}</div>
+    <div class="badges">
+      <span class="badge b-grey">${j.type}</span>
+      ${j.program ? '<span class="badge b-green">✓ Matches your program</span>' : ''}
+      ${j.exp ? '<span class="badge b-blue">★ Fits your experience</span>' : ''}
+      <span class="badge b-amber">◷ ${j.fit}</span>
+    </div>
+    <div class="foot"><span>${ICONS.shield} Payment protected by Sprout</span>${applied ? '<span class="applied-tag">✓ Applied</span>' : '<span class="view">View ›</span>'}</div>
+  </button>`;
+}
+
+function detail() {
+  const j = JOBS.find(x => x.id === S.jobId);
+  const applied = S.applied.includes(j.id);
+  return `
+  <div class="topbar"><button class="back" onclick="go({view:'feed'})" aria-label="Back">‹</button><h2>Job details</h2></div>
+  <div class="content">
+    <h3 style="margin:0;font-size:21px">${j.title}</h3>
+    <div class="muted" style="margin-top:3px">${j.biz} · ${distLabel(j)}</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Pay</div><div class="v">$${j.pay}${j.per}</div></div>
+      <div class="stat"><div class="k">Time</div><div class="v">${j.hrsLabel.replace('~','')}</div></div>
+      <div class="stat"><div class="k">Job type</div><div class="v">${j.type}</div></div>
+      <div class="stat"><div class="k">When</div><div class="v" style="font-size:14px">${j.when}</div></div>
+    </div>
+    <div class="box">
+      <h4>Why this is a match for you</h4>
+      ${j.program ? '<div class="match"><span class="ic">✓</span><span>Related to your program, <b>Software Engineering Technology</b></span></div>' : ''}
+      ${j.exp ? `<div class="match"><span class="ic">★</span><span>Similar to work you’ve done: <b>${j.exp}</b>. Your certificate can be attached to your application.</span></div>` : ''}
+      <div class="match"><span class="ic">◷</span><span>${j.fit}</span></div>
+    </div>
+    <div class="box"><h4>What you’ll do</h4><ul>${j.todo.map(t => `<li>${t}</li>`).join('')}</ul></div>
+    <div class="box"><h4>Requirements</h4><ul>${j.req.map(t => `<li>${t}</li>`).join('')}</ul></div>
+    <div class="box escrow">
+      <h4>${ICONS.shield} Your payment is protected</h4>
+      <div style="font-size:14px;line-height:1.45">${j.biz} pays <b>$${j.pay}${j.per}</b> to Sprout <b>before you start</b>. Sprout releases it to you when you both confirm the job is done.</div>
+      ${S.showHow ? `<ol class="steps">
+        <li><span class="n">1</span><span>The business pays Sprout up front. You can see this in My Jobs.</span></li>
+        <li><span class="n">2</span><span>You do the work and tap <b>Mark as done</b>.</span></li>
+        <li><span class="n">3</span><span>The business confirms. If they don’t respond within <b>3 days</b>, the money is released to you automatically.</span></li>
+        <li><span class="n">4</span><span>If there’s a problem, Sprout support reviews it before any money moves.</span></li>
+      </ol>` : `<div style="margin-top:8px"><button class="linkbtn" onclick="S.showHow=true; render()">How does this work?</button></div>`}
+    </div>
+  </div>
+  <div class="sticky-cta">
+    ${applied ? '<button class="btn" disabled>✓ Application sent</button>' : `<button class="btn" onclick="S.sheet='apply'; render()">Apply for this job</button>`}
+  </div>`;
+}
+
+function applySheet() {
+  const j = JOBS.find(x => x.id === S.jobId);
+  const certs = [['menu','Menu website refresh · Maple Leaf Café', j.skill === 'web'], ['inv','Inventory spreadsheet setup · Corner Bike Shop', j.skill === 'data'], ['photo','Product photo shoot · Bloom Florist', j.skill === 'photo']];
+  return `<div class="scrim" onclick="if(event.target===this){S.sheet=null; render()}"><div class="sheet" role="dialog" aria-label="Apply">
+    <div class="grab"></div>
+    <h3>Apply: ${j.title}</h3>
+    <div class="muted small">${j.biz} · $${j.pay}${j.per} · ${j.type}</div>
+    <div class="shared"><b>Shared with ${j.biz}:</b> your name, program and year, skills, and the certificates you choose below.</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:2px">Attach work certificates</div>
+    ${certs.map(c => `<label class="check"><input type="checkbox" ${c[2] ? 'checked' : ''}><span>${c[1]}${c[2] ? ' <span class="badge b-blue">Recommended</span>' : ''}</span></label>`).join('')}
+    <div style="font-weight:700;font-size:14px;margin:14px 0 6px">Message <span class="muted" style="font-weight:400">(optional)</span></div>
+    <textarea placeholder="Say hi and mention why you’re a good fit…"></textarea>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn secondary" style="flex:1" onclick="S.sheet=null; render()">Cancel</button>
+      <button class="btn" style="flex:2" onclick="submitApp()">Submit application</button>
+    </div>
+  </div></div>`;
+}
+function submitApp() { if (!S.applied.includes(S.jobId)) S.applied.push(S.jobId); S.sheet = null; go({ view: 'applied' }); }
+
+function appliedScreen() {
+  const j = JOBS.find(x => x.id === S.jobId);
+  return `<div class="success">
+    <div class="bigcheck">✓</div>
+    <h2 style="margin:0 0 6px">Application sent</h2>
+    <p class="muted">${j.biz} usually replies within 2 days. You’ll get a notification, and you can track it in <b>My Jobs → Applied</b>.</p>
+    <div style="display:grid;gap:10px;margin-top:24px">
+      <button class="btn" onclick="go({tab:'myjobs', view:'myjobs', myTab:'applied'})">View in My Jobs</button>
+      <button class="btn secondary" onclick="go({view:'feed'})">Back to jobs</button>
+    </div>
+  </div>`;
+}
+
+function filterSheet(k) {
+  const F = FILTERS[k];
+  return `<div class="scrim" onclick="if(event.target===this){S.sheet=null; render()}"><div class="sheet" role="dialog" aria-label="${F.title}">
+    <div class="grab"></div><h3>${F.title}</h3>
+    ${F.opts.map(o => `<button class="opt ${S.f[k] === o[0] ? 'on' : ''}" onclick="S.f.${k}='${o[0]}'; S.sheet=null; render()">${o[1]}${S.f[k] === o[0] ? '<span>✓</span>' : ''}</button>`).join('')}
+  </div></div>`;
+}
+
+/* availability */
+function shownGrid() {
+  if (S.draft) return S.draft;
+  return S.availMode === 'next' ? (S.next || S.regular) : S.regular;
+}
+function baseGrid() { return S.availMode === 'next' ? (S.next || S.regular) : S.regular; }
+function toggleCell(r, c) {
+  if (!S.draft) S.draft = clone(baseGrid());
+  S.draft[r][c] = S.draft[r][c] ? 0 : 1; render();
+}
+function toggleDay(c) {
+  if (!S.draft) S.draft = clone(baseGrid());
+  const anyOn = S.draft.some(r => r[c]);
+  S.draft.forEach(r => r[c] = anyOn ? 0 : 1); render();
+}
+function setMode(m) {
+  if (S.draft) { toast('Save or discard your changes first.'); return; }
+  S.availMode = m; render();
+}
+function saveAvail() {
+  if (S.availMode === 'next') { S.next = S.draft; S.draft = null; toast('Next week (Nov 9–15) saved. Your regular schedule hasn’t changed.'); }
+  else { S.sheet = 'confirmRegular'; render(); }
+}
+function confirmRegular() { S.regular = S.draft; S.draft = null; S.sheet = null; toast('Regular schedule saved. It repeats every week.'); }
+
+function availability() {
+  const g = shownGrid(), base = baseGrid(), isNext = S.availMode === 'next';
+  const cols = DAYS.map((d, c) => isNext
+    ? `<button class="h" onclick="toggleDay(${c})" title="Tap to clear or fill the whole day">${d[0]}<b>${d[1]}</b></button>`
+    : `<button class="h" onclick="toggleDay(${c})" title="Tap to clear or fill the whole day">${d[0]}<b>&nbsp;</b></button>`).join('');
+  const rows = SLOTS.map((s, r) => `<div class="rl">${s}</div>` + DAYS.map((d, c) =>
+    `<button class="cell ${g[r][c] ? 'on' : ''} ${S.draft && S.draft[r][c] !== base[r][c] ? 'changed' : ''}" aria-label="${d[0]} ${s} ${g[r][c] ? 'available' : 'unavailable'}" onclick="toggleCell(${r},${c})"></button>`).join('')).join('');
+  return `
+  <div class="topbar"><h2>Availability</h2></div>
+  <div class="content">
+    <div class="seg">
+      <button class="${!isNext ? 'on' : ''}" onclick="setMode('regular')">Every week</button>
+      <button class="${isNext ? 'on' : ''}" onclick="setMode('next')">Next week · Nov 9–15</button>
+    </div>
+    ${isNext
+      ? `<div class="note">Changes here apply to <b>next week only</b>. Your regular schedule stays the same. Edit until <b>Sun, Nov 8</b>.</div>`
+      : `<div class="info">This is your regular schedule. It repeats every week. Sprout only shows jobs that fit it.</div>`}
+    ${isNext && S.next && !S.draft ? `<div class="small muted" style="margin:-4px 0 10px">✎ Next week has been changed from your regular schedule. <button class="linkbtn small" onclick="S.next=null; toast('Next week reset to your regular schedule.')">Reset</button></div>` : ''}
+    <div class="grid"><div></div>${cols}${rows}</div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--green)"></i>Available</span>
+      <span><i class="sw" style="border:1px solid var(--line)"></i>Not available</span>
+      ${S.draft ? '<span><i class="sw" style="outline:2px dashed var(--amber)"></i>Unsaved change</span>' : ''}
+    </div>
+    <div class="small muted">Tap a box to switch it on or off. Tap a day’s name to clear or fill the whole day.</div>
+  </div>
+  ${S.draft ? `<div class="savebar"><button class="btn secondary" style="flex:1" onclick="S.draft=null; render()">Discard</button><button class="btn" style="flex:2" onclick="saveAvail()">Save ${isNext ? 'next week' : 'every week'}</button></div>` : ''}`;
+}
+function confirmRegularSheet() {
+  return `<div class="scrim"><div class="sheet" role="dialog" aria-label="Confirm">
+    <div class="grab"></div><h3>Change every week?</h3>
+    <p class="muted" style="font-size:14px">This updates your regular schedule, which repeats every week from now on. To change only one week, use the <b>Next week</b> tab instead.</p>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn secondary" style="flex:1" onclick="S.sheet=null; render()">Go back</button>
+      <button class="btn" style="flex:1" onclick="confirmRegular()">Change every week</button>
+    </div>
+  </div></div>`;
+}
+
+/* my jobs */
+const COMPLETED = [
+  { id: 'inv', t: 'Inventory spreadsheet setup', b: 'Corner Bike Shop', d: 'Sep 12 – 13, 2026', h: 4, pay: 80, rel: 'Data management: designed a structured spreadsheet with formulas and validation.' },
+  { id: 'menu', t: 'Menu website refresh', b: 'Maple Leaf Café', d: 'Aug 4 – 15, 2026', h: 10, pay: 140, rel: 'Web development: rebuilt a responsive menu page with HTML, CSS and JavaScript.' },
+  { id: 'photo', t: 'Product photo shoot', b: 'Bloom Florist', d: 'Jul 18, 2026', h: 3, pay: 60, rel: 'Digital media: product photography and image editing.' }
+];
+function myjobs() {
+  const tabs = [['active', 'Active', 1], ['applied', 'Applied', S.applied.length], ['completed', 'Completed', 3]];
+  let body = '';
+  if (S.myTab === 'active') {
+    body = `<button class="listitem" onclick="go({view:'payment'})"><div class="thumb">BF</div><div class="body"><div class="t">Logo cleanup</div><div class="s">Bloom Florist · $90 · One-time</div><div style="margin-top:6px"><span class="badge b-amber">Waiting for Bloom Florist to confirm</span></div></div><span class="chev">›</span></button>`;
+  } else if (S.myTab === 'applied') {
+    body = S.applied.length ? S.applied.map(id => { const j = JOBS.find(x => x.id === id); return `<div class="listitem"><div class="thumb">${j.biz.split(' ').map(w => w[0]).slice(0,2).join('')}</div><div class="body"><div class="t">${j.title}</div><div class="s">${j.biz} · $${j.pay}${j.per}</div><div style="margin-top:6px"><span class="badge b-blue">Sent today · waiting for reply</span></div></div></div>`; }).join('')
+      : `<div class="empty">You haven’t applied to any jobs yet.<br><button class="linkbtn" onclick="go({tab:'jobs',view:'feed'})">Browse jobs</button></div>`;
+  } else {
+    body = COMPLETED.map(c => `<button class="listitem" onclick="go({view:'cert', certId:'${c.id}'})"><div class="thumb">${c.b.split(' ').map(w => w[0]).slice(0,2).join('')}</div><div class="body"><div class="t">${c.t}</div><div class="s">${c.b} · ${c.d.split(',')[0]} · ${c.h} hrs</div><div style="margin-top:6px"><span class="badge b-green">Paid $${c.pay}</span> <span class="badge b-blue">Certificate</span></div></div><span class="chev">›</span></button>`).join('');
+  }
+  return `
+  <div class="topbar"><h2>My Jobs</h2></div>
+  <div class="content">
+    <div class="seg">${tabs.map(t => `<button class="${S.myTab === t[0] ? 'on' : ''}" onclick="S.myTab='${t[0]}'; render()">${t[1]}${t[2] ? `<span class="badge-count">${t[2]}</span>` : ''}</button>`).join('')}</div>
+    ${body}
+  </div>`;
+}
+function payment() {
+  return `
+  <div class="topbar"><button class="back" onclick="go({view:'myjobs'})" aria-label="Back">‹</button><h2>Logo cleanup</h2></div>
+  <div class="content">
+    <div class="muted">Bloom Florist · One-time · 3 hrs</div>
+    <div class="stats"><div class="stat"><div class="k">Payment</div><div class="v">$90</div></div><div class="stat"><div class="k">Status</div><div class="v" style="font-size:14px;color:var(--amber)">Held by Sprout</div></div></div>
+    <div class="box">
+      <h4>Payment status</h4>
+      <ul class="timeline">
+        <li class="done"><span class="dotc">✓</span><div><div class="tt">Bloom Florist paid $90 to Sprout</div><div class="ts">Mon, Oct 26 · held safely until the job is confirmed</div></div></li>
+        <li class="done"><span class="dotc">✓</span><div><div class="tt">You marked the job as done</div><div class="ts">Sun, Nov 1</div></div></li>
+        <li class="now"><span class="dotc"></span><div><div class="tt">Waiting for Bloom Florist to confirm</div><div class="ts">They have until Wed, Nov 4 to confirm or report a problem</div></div></li>
+        <li><span class="dotc"></span><div><div class="tt">$90 released to you</div><div class="ts">As soon as Bloom Florist confirms, and <b>no later than Wed, Nov 4</b>. If they don’t respond, it’s released automatically.</div></div></li>
+      </ul>
+    </div>
+    <div class="box escrow" style="font-size:14px">${ICONS.shield} <b>Why is my money held?</b> Holding payment protects both sides: the business knows the work gets done, and you know the money is already there.</div>
+    <button class="btn secondary" onclick="toast('Demo only: this would open a support request.')">Report a problem</button>
+  </div>`;
+}
+function cert() {
+  const c = COMPLETED.find(x => x.id === S.certId);
+  return `
+  <div class="topbar"><button class="back" onclick="go({view:'myjobs'})" aria-label="Back">‹</button><h2>Certificate</h2></div>
+  <div class="content">
+    <div class="cert">
+      <div class="seal">🌱 SPROUT · VERIFIED WORK CERTIFICATE</div>
+      <h3>${c.t}</h3>
+      <div class="muted">completed by <b style="color:var(--ink)">Alex Student</b></div>
+      <dl>
+        <dt>Business</dt><dd>${c.b}</dd>
+        <dt>Dates</dt><dd>${c.d}</dd>
+        <dt>Hours</dt><dd>${c.h} hours</dd>
+        <dt>Relevance</dt><dd>${c.rel}</dd>
+        <dt>Verify at</dt><dd>sprout.app/v/${c.id.toUpperCase()}-2026</dd>
+      </dl>
+    </div>
+    <div style="display:grid;gap:10px;margin-top:16px">
+      <button class="btn" onclick="toast('Demo only: this would add the certificate to your LinkedIn profile.')">Add to LinkedIn</button>
+      <button class="btn secondary" onclick="toast('Demo only: this would download a PDF for your résumé.')">Download PDF for résumé</button>
+    </div>
+  </div>`;
+}
+function profile() {
+  return `
+  <div class="topbar"><h2>Profile</h2><button class="linkbtn" onclick="toast('Demo only: editing your profile is not part of this test.')">Edit</button></div>
+  <div class="content">
+    <div class="prof"><div class="avatar">AS</div><div style="font-weight:800;font-size:19px">Alex Student</div><div class="muted small">B.Tech Software Engineering Technology · Year 3<br>McMaster University · Verified student ✓</div></div>
+    <div class="box"><h4>Skills</h4><div class="badges" style="margin:0">${['HTML/CSS','JavaScript','React','Excel','Photography','WordPress'].map(s => `<span class="badge b-grey">${s}</span>`).join('')}</div></div>
+    <div class="box">
+      <div class="kv"><span>Preferred distance</span><b>Within 10 km + remote</b></div>
+      <div class="kv"><span>Job types</span><b>One-time and ongoing</b></div>
+      <div class="kv"><span>Completed jobs</span><b>3 · $280 earned</b></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- render ---------- */
+function render() {
+  const scr = document.getElementById('screen');
+  const keepScroll = scr.scrollTop;
+  const views = { feed, detail, applied: appliedScreen, availability, myjobs, payment, cert, profile };
+  let html = views[S.view]();
+  if (S.sheet === 'apply') html += applySheet();
+  else if (S.sheet === 'confirmRegular') html += confirmRegularSheet();
+  else if (S.sheet && S.sheet.startsWith('filter:')) html += filterSheet(S.sheet.slice(7));
+  if (S.toast) html += `<div class="toast" role="status">${S.toast}</div>`;
+  const hadFocus = document.activeElement && document.activeElement.id === 'q';
+  scr.innerHTML = html;
+  scr.scrollTop = keepScroll;
+  if (hadFocus) { const q = document.getElementById('q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+
+  const tabs = [['jobs','Jobs','feed'],['avail','Availability','availability'],['myjobs','My Jobs','myjobs'],['profile','Profile','profile']];
+  document.getElementById('tabbar').innerHTML = tabs.map(t =>
+    `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="tabTo('${t[0]}','${t[2]}')">${ICONS[t[0]]}<span>${t[1]}</span></button>`).join('');
+}
+function tabTo(tab, view) {
+  if (S.draft && tab !== 'avail') { toast('You have unsaved availability changes. Save or discard them first.'); return; }
+  S.sheet = null; go({ tab, view });
+}
+render();
+</script>
+</body>
+</html>
